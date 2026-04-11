@@ -1,8 +1,8 @@
 """Seed script to populate sample math lessons."""
 
 import json
-from math_app.models import LessonCreate, TopicEnum, LevelEnum
-from math_app.repository import get_repository
+from math_app.core.models import LessonCreate, TopicEnum, LevelEnum
+from math_app.core.repository import get_repository
 
 
 def seed_lessons():

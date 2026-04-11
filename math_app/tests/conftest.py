@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from math_app.app.main import app
-from math_app.repository import get_repository, LessonRepository
+from math_app.core.repository import get_repository, LessonRepository
 
 
 @pytest.fixture

@@ -31,9 +31,11 @@ A simplified FastAPI backend for teaching mathematics progressively, from basic 
 ex1_math/
 ├── math_app/
 │   ├── __init__.py
-│   ├── models.py              # Pydantic schemas (Lesson, Problem, etc.)
-│   ├── repository.py          # In-memory lesson storage layer
-│   ├── exceptions.py          # Custom exception classes
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── models.py          # Pydantic schemas (Lesson, Problem, etc.)
+│   │   ├── repository.py      # In-memory lesson storage layer
+│   │   └── exceptions.py      # Custom exception classes
 │   ├── app/
 │   │   ├── __init__.py
 │   │   └── main.py            # FastAPI app and endpoints

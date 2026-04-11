@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from math_app.models import Lesson, LessonCreate, LessonUpdate, Problem, ProblemCreate
+from .models import Lesson, LessonCreate, LessonUpdate, Problem, ProblemCreate
 
 
 class LessonRepository:

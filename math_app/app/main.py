@@ -4,15 +4,15 @@ from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
 
-from math_app.models import (
+from math_app.core.models import (
     LessonCreate,
     LessonResponse,
     LessonUpdate,
     TopicEnum,
     LevelEnum,
 )
-from math_app.repository import LessonRepository, get_repository
-from math_app.exceptions import MathAPIException, LessonNotFound
+from math_app.core.repository import LessonRepository, get_repository
+from math_app.core.exceptions import MathAPIException, LessonNotFound
 
 app = FastAPI(
     title="Math Teaching API",
