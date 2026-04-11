@@ -37,15 +37,15 @@ ex1_math/
 │   ├── app/
 │   │   ├── __init__.py
 │   │   └── main.py            # FastAPI app and endpoints
+│   ├── scripts/
+│   │   ├── __init__.py
+│   │   └── seed_lessons.py    # Populate sample lessons
 │   └── tests/
 │       ├── __init__.py
 │       ├── conftest.py        # pytest fixtures and setup
 │       └── test_lessons.py    # Test cases (CRUD, validation, errors)
-├── scripts/
-│   └── seed_lessons.py        # Optional: populate sample lessons
 ├── docs/
-│   └── lessons.http           # Optional: REST Client requests
-├── main.py                    # Legacy entry point (can be deprecated)
+│   └── lessons.http           # REST Client requests
 ├── pyproject.toml             # Project metadata and dependencies
 ├── README.md                  # This file
 └── .gitignore                 # Git ignore rules
@@ -220,10 +220,10 @@ math_app/tests/test_lessons.py::TestCreateLesson::test_create_lesson_with_proble
 ### 1. Seed Sample Lessons
 ```bash
 # Using uv:
-uv run python -m scripts.seed_lessons
+uv run python -m math_app.scripts.seed_lessons
 
 # Or with activated venv:
-python -m scripts.seed_lessons
+python -m math_app.scripts.seed_lessons
 ```
 
 This populates the API with sample lessons:
