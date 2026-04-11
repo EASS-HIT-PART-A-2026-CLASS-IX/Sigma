@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
+from starlette.requests import Request
 
 from math_app.models import (
     LessonCreate,
@@ -11,12 +12,22 @@ from math_app.models import (
     LevelEnum,
 )
 from math_app.repository import LessonRepository, get_repository
+from math_app.exceptions import MathAPIException, LessonNotFound
 
 app = FastAPI(
     title="Math Teaching API",
     description="A simplified backend for teaching math progressively",
     version="0.1.0",
 )
+
+
+@app.exception_handler(MathAPIException)
+async def math_api_exception_handler(request: Request, exc: MathAPIException):
+    """Handle custom MathAPIException errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message},
+    )
 
 
 @app.get("/health", tags=["health"])
@@ -74,7 +85,7 @@ async def get_lesson(
     """Retrieve a specific lesson by ID."""
     lesson = repository.read(lesson_id)
     if not lesson:
-        raise HTTPException(status_code=404, detail=f"Lesson {lesson_id} not found")
+        raise LessonNotFound(lesson_id)
     return lesson
 
 
@@ -96,7 +107,7 @@ async def update_lesson(
     """
     lesson = repository.read(lesson_id)
     if not lesson:
-        raise HTTPException(status_code=404, detail=f"Lesson {lesson_id} not found")
+        raise LessonNotFound(lesson_id)
 
     # Validate that at least one field is provided
     if not any(
@@ -125,7 +136,7 @@ async def delete_lesson(
     Returns a 204 No Content response on success.
     """
     if not repository.delete(lesson_id):
-        raise HTTPException(status_code=404, detail=f"Lesson {lesson_id} not found")
+        raise LessonNotFound(lesson_id)
 
 
 if __name__ == "__main__":
