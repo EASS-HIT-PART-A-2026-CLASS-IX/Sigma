@@ -20,7 +20,8 @@ A simplified FastAPI backend for teaching mathematics progressively, from basic 
 - ✅ Custom error handling and HTTP exceptions
 - ✅ 25+ comprehensive pytest test cases (80%+ coverage)
 - ✅ RESTful API with OpenAPI/Swagger documentation
-- ✅ Sample lessons seed script (bonus)
+- ✅ Sample data loaded from JSON on startup (no extra setup needed)
+- ✅ Seed script for generating larger datasets (bonus)
 - ✅ REST Client `.http` playground (bonus)
 
 ---
@@ -34,24 +35,26 @@ ex1_math/
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── models.py          # Pydantic schemas (Lesson, Problem, etc.)
-│   │   ├── repository.py      # In-memory lesson storage layer
+│   │   ├── repository.py      # In-memory lesson storage layer (loads sample_db.json)
 │   │   └── exceptions.py      # Custom exception classes
 │   ├── app/
 │   │   ├── __init__.py
 │   │   └── main.py            # FastAPI app and endpoints
 │   ├── scripts/
 │   │   ├── __init__.py
-│   │   └── seed_lessons.py    # Populate sample lessons
+│   │   └── seed_lessons.py    # Populate sample lessons (optional, for manual seeding)
 │   └── tests/
 │       ├── __init__.py
 │       ├── conftest.py        # pytest fixtures and setup
 │       └── test_lessons.py    # Test cases (CRUD, validation, errors)
 ├── docs/
 │   └── lessons.http           # REST Client requests
+├── sample_db.json             # Sample data (auto-loaded on startup)
 ├── pyproject.toml             # Project metadata and dependencies
 ├── README.md                  # This file
 └── .gitignore                 # Git ignore rules
 ```
+
 
 ---
 
@@ -115,6 +118,9 @@ The API will be available at:
 - **Base URL**: `http://localhost:8000`
 - **Swagger UI**: `http://localhost:8000/docs`
 - **ReDoc**: `http://localhost:8000/redoc`
+
+**Note:** The API automatically loads sample data from `sample_db.json` on startup, so you can immediately test the endpoints without additional setup.
+
 
 ### Example API Requests
 
@@ -219,7 +225,35 @@ math_app/tests/test_lessons.py::TestCreateLesson::test_create_lesson_with_proble
 
 ## Bonus Features
 
-### 1. Seed Sample Lessons
+### 1. Sample Database (sample_db.json)
+The project includes a lightweight `sample_db.json` file that provides starter data:
+
+- Automatically loaded when the API starts
+- Contains 2 sample lessons for testing
+- Easy to modify with additional lessons
+- Located at the project root
+
+To add more sample lessons, edit `sample_db.json`:
+```json
+{
+  "lessons": [
+    {
+      "id": "lesson-003",
+      "title": "Your Lesson Title",
+      "description": "Your lesson description",
+      "topic": "arithmetic",
+      "level": "beginner",
+      "problems": [...],
+      "created_at": "2024-01-15T10:40:00"
+    }
+  ]
+}
+```
+
+After modifying, restart the API to reload the changes.
+
+### 2. Seed Script (Optional)
+For generating larger datasets, use the seed script:
 ```bash
 # Using uv:
 uv run python -m math_app.scripts.seed_lessons
@@ -228,17 +262,9 @@ uv run python -m math_app.scripts.seed_lessons
 python -m math_app.scripts.seed_lessons
 ```
 
-This populates the API with sample lessons:
-- **Arithmetic**: Basic addition, subtraction
-- **Algebra**: Linear equations
-- **Geometry**: Basic shapes
+This populates the in-memory repository with 7 sample lessons across all topics and levels.
 
-After seeding, verify via:
-```bash
-curl http://localhost:8000/lessons
-```
-
-### 2. REST Client Playground
+### 3. REST Client Playground
 Use the `.http` file with VS Code REST Client extension or Postman:
 
 ```bash
