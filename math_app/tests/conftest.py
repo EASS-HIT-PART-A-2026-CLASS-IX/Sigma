@@ -1,29 +1,51 @@
 """Pytest configuration and fixtures for the Math Teaching API."""
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
 from math_app.app.main import app
-from math_app.core.repository import get_repository, LessonRepository
+from math_app.core.database import get_session
+from math_app.core.models_orm import Base
+
+
+# Create an in-memory SQLite database for testing
+@pytest.fixture(scope="function")
+def test_db():
+    """Create a test database using SQLite in-memory."""
+    # Use SQLite in-memory database for fast testing
+    engine = create_engine("sqlite:///:memory:")
+    
+    # Create all tables
+    Base.metadata.create_all(bind=engine)
+    
+    # Create session factory
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
+    yield TestingSessionLocal, engine
+    
+    # Cleanup
+    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
-def test_repository():
-    """Provide a fresh, empty test repository for each test."""
-    repo = LessonRepository()
-    repo.clear()
-    yield repo
-    repo.clear()
+def db_session(test_db):
+    """Provide a database session for testing."""
+    TestingSessionLocal, engine = test_db
+    session = TestingSessionLocal()
+    yield session
+    session.close()
 
 
 @pytest.fixture
-def client(test_repository):
-    """Provide a TestClient with dependency injection for the test repository."""
-
-    def get_test_repository():
-        return test_repository
-
-    app.dependency_overrides[get_repository] = get_test_repository
+def client(db_session):
+    """Provide a TestClient with database session dependency injection."""
+    
+    def override_get_session():
+        yield db_session
+    
+    app.dependency_overrides[get_session] = override_get_session
     yield TestClient(app)
     app.dependency_overrides.clear()
 
