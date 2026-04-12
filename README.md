@@ -8,7 +8,8 @@ A simplified FastAPI backend for teaching mathematics progressively, from basic 
 
 **Theme:** Math Teaching System  
 **Core Resource:** Lessons (each containing one or more math problems)  
-**Persistence:** In-memory (ready for SQLite migration in EX3)  
+**Persistence:** MySQL with SQLAlchemy ORM (Alembic migrations)  
+**User Progress:** Lesson-level tracking (prepared for authentication)  
 **Testing:** pytest + FastAPI TestClient  
 
 ### Key Features
@@ -18,10 +19,14 @@ A simplified FastAPI backend for teaching mathematics progressively, from basic 
 - ✅ Difficulty levels (beginner, intermediate, advanced)
 - ✅ Data validation with Pydantic
 - ✅ Custom error handling and HTTP exceptions
+- ✅ MySQL database with SQLAlchemy ORM
+- ✅ Database migrations with Alembic
+- ✅ User progress tracking (session-ready for authentication)
 - ✅ 25+ comprehensive pytest test cases (80%+ coverage)
 - ✅ RESTful API with OpenAPI/Swagger documentation
-- ✅ Sample data loaded from JSON on startup (no extra setup needed)
-- ✅ REST Client `.http` playground (bonus)
+- ✅ Sample data auto-seeded on startup
+- ✅ Docker + Docker Compose for containerized deployment
+- ✅ REST Client `.http` playground
 
 ---
 
@@ -33,27 +38,39 @@ ex1_math/
 │   ├── __init__.py
 │   ├── core/
 │   │   ├── __init__.py
-│   │   ├── models.py          # Pydantic schemas (Lesson, Problem, etc.)
-│   │   ├── repository.py      # In-memory lesson storage layer (loads sample_db.json)
-│   │   └── exceptions.py      # Custom exception classes
+│   │   ├── models.py              # Pydantic schemas (Lesson, Problem, etc.)
+│   │   ├── models_orm.py          # SQLAlchemy ORM models (LessonORM, UserORM, etc.)
+│   │   ├── database.py            # Database configuration and session management
+│   │   ├── repository.py          # Legacy in-memory storage (deprecated)
+│   │   └── exceptions.py          # Custom exception classes
 │   ├── app/
 │   │   ├── __init__.py
-│   │   └── main.py            # FastAPI app and endpoints
+│   │   └── main.py                # FastAPI app and endpoints
 │   ├── scripts/
-│   │   └── __init__.py
+│   │   ├── __init__.py
+│   │   └── init_db.py             # Database initialization and seeding script
 │   └── tests/
 │       ├── __init__.py
-│       ├── conftest.py        # pytest fixtures and setup
-│       └── test_lessons.py    # Test cases (CRUD, validation, errors)
+│       ├── conftest.py            # pytest fixtures and setup
+│       └── test_lessons.py        # Test cases (CRUD, validation, errors)
+├── alembic/
+│   ├── __init__.py
+│   ├── env.py                     # Alembic migration environment
+│   ├── script.py.mako             # Migration template
+│   └── versions/
+│       ├── __init__.py
+│       └── 001_initial_schema.py  # Initial schema creation
 ├── docs/
-│   └── lessons.http           # REST Client requests
-├── sample_db.json             # Sample data (auto-loaded on startup)
-├── pyproject.toml             # Project metadata and dependencies
-├── Dockerfile                 # Docker container definition
-├── docker-compose.yml         # Docker Compose orchestration
-├── .dockerignore               # Files to exclude from Docker build
-├── README.md                  # This file
-└── .gitignore                 # Git ignore rules
+│   └── lessons.http               # REST Client requests
+├── sample_db.json                 # Sample data (auto-seeded on startup)
+├── .env                           # Environment variables (DATABASE_URL, etc.)
+├── alembic.ini                    # Alembic configuration
+├── pyproject.toml                 # Project metadata and dependencies
+├── Dockerfile                     # Docker container definition
+├── docker-compose.yml             # Docker Compose orchestration
+├── .dockerignore                  # Files to exclude from Docker build
+├── README.md                      # This file
+└── .gitignore                     # Git ignore rules
 ```
 
 
@@ -63,7 +80,8 @@ ex1_math/
 
 ### Prerequisites
 - Python 3.11 or later
-- `uv` package manager (https://docs.astral.sh/uv/)
+- MySQL 8.0+ (or use Docker Compose for containerized MySQL)
+- pip and venv (built-in with Python)
 
 ### Step 1: Clone the Repository
 ```bash
@@ -71,10 +89,9 @@ cd ex1_math
 ```
 
 ### Step 2: Create Virtual Environment and Install Dependencies
-Using `uv`:
 ```bash
-# Create and activate venv (uv automatically creates it)
-uv venv
+# Create virtual environment
+python -m venv .venv
 
 # Activate the virtual environment
 # On Windows:
@@ -83,21 +100,29 @@ uv venv
 source .venv/bin/activate
 
 # Install dependencies
-uv sync
-```
-
-Or using pip with a traditional venv:
-```bash
-python -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-# or
-.venv\Scripts\activate     # Windows
-
 pip install -e .
-pip install pytest httpx
 ```
 
-### Step 3: Verify Installation
+### Step 3: Set Up Database
+
+#### Option A: Using Docker Compose (Recommended)
+```bash
+# Start MySQL and FastAPI with Docker Compose
+docker-compose up
+# The database will be automatically initialized and populated with sample data
+```
+
+#### Option B: Local MySQL Setup
+```bash
+# 1. Ensure MySQL is running locally
+# 2. Create the database
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS math_app;"
+
+# 3. Initialize the database (creates tables and seeds sample data)
+python math_app/scripts/init_db.py
+```
+
+### Step 4: Verify Installation
 ```bash
 python -c "import fastapi; print('FastAPI installed:', fastapi.__version__)"
 ```
@@ -106,14 +131,57 @@ python -c "import fastapi; print('FastAPI installed:', fastapi.__version__)"
 
 ## Running the API
 
-### Option 1: Local Development (without Docker)
+### Option 1: Docker Compose (Recommended - Full Stack)
+
+#### Start with Docker Compose
+```bash
+# Build and start both MySQL and FastAPI
+docker-compose up
+
+# Or run in the background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f api
+```
+
+The API will be available at:
+- **Base URL**: `http://localhost:8000`
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+- **MySQL**: `localhost:3306` (user: `root`, password: `rootpassword`)
+
+**Database Initialization:**
+- Alembic migrations run automatically on container startup
+- Sample data from `sample_db.json` is seeded if the database is empty
+- Persistent volume `mysql_data` stores database files
+
+#### Stop Docker Compose
+```bash
+# Stop and remove containers
+docker-compose down
+
+# Stop and remove containers + volumes (wipes database)
+docker-compose down -v
+```
+
+---
+
+### Option 2: Local Development (Manual MySQL)
+
+#### Prerequisites
+- MySQL running locally (e.g., via `docker run -p 3306:3306 -e MYSQL_ROOT_PASSWORD=rootpassword mysql:8.0`)
+- Database created: `CREATE DATABASE math_app;`
+- `.env` file configured with `DATABASE_URL`
 
 #### Start the Development Server
 ```bash
-# Using uv:
-uv run uvicorn math_app.app.main:app --reload
+# Activate virtual environment first
+source .venv/bin/activate  # macOS/Linux
+# or
+.venv\Scripts\activate     # Windows
 
-# Or activate venv first, then:
+# Run the FastAPI server
 uvicorn math_app.app.main:app --reload
 ```
 
@@ -122,48 +190,29 @@ The API will be available at:
 - **Swagger UI**: `http://localhost:8000/docs`
 - **ReDoc**: `http://localhost:8000/redoc`
 
-**Note:** The API automatically loads sample data from `sample_db.json` on startup, so you can immediately test the endpoints without additional setup.
+**Auto-reload enabled**: Changes to Python files automatically restart the server.
 
 ---
 
-### Option 2: Docker Deployment
-
-#### Start with Docker Compose
-```bash
-# Build and run the container with live reload
-docker-compose up
-
-# Or build in the background
-docker-compose up -d
-```
-
-The API will be available at the same endpoints:
-- **Base URL**: `http://localhost:8000`
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
+### Option 3: Docker (without Compose)
 
 #### Build Docker Image Manually
 ```bash
 # Build the image
 docker build -t math-teaching-api:latest .
-
-# Run the container
-docker run -p 8000:8000 math-teaching-api:latest
 ```
 
-#### Using Docker (Production Mode - without reload)
+#### Run the Container
 ```bash
-# For production, build and run without the --reload flag
-docker build -f Dockerfile -t math-teaching-api:v1 .
-docker run -p 8000:8000 math-teaching-api:v1
+# Run standalone (you must have MySQL running separately)
+docker run -p 8000:8000 \
+  -e DATABASE_URL=mysql+pymysql://root:rootpassword@host.docker.internal:3306/math_app \
+  math-teaching-api:latest
 ```
 
-#### Docker Compose Configuration
-- **Image**: Built from `Dockerfile`
-- **Container name**: `math_teaching_api`
-- **Port mapping**: `8000:8000`
-- **Volumes**: Current directory mounted for live code reload during development
-- **Environment**: `PYTHONUNBUFFERED=1` for real-time logging
+#### Notes
+- The container will attempt to initialize the database on startup
+- Using `host.docker.internal` allows the container to access MySQL on the host machine
 
 ---
 

@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: math_teaching_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: math_app
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
   api:
     build: .
     container_name: math_teaching_api
@@ -8,6 +24,14 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=mysql+pymysql://root:rootpassword@mysql:3306/math_app
+      - DATABASE_ECHO=true
     volumes:
       - .:/app
-    command: uvicorn math_app.app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: sh -c "python math_app/scripts/init_db.py && uvicorn math_app.app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+volumes:
+  mysql_data:
