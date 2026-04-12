@@ -12,8 +12,6 @@ from uuid import uuid4
 # Add parent directory to path so we can import math_app modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from sqlalchemy import text
-
 from math_app.core.database import SessionLocal, engine
 from math_app.core.models_orm import LessonORM
 
@@ -36,7 +34,7 @@ def init_database():
             return
 
         # Load sample data from JSON
-        sample_db_path = Path(__file__).parent.parent / "sample_db.json"
+        sample_db_path = Path(__file__).parent.parent.parent / "sample_db.json"
         if not sample_db_path.exists():
             print(f"⚠️  Sample database not found at {sample_db_path}")
             return

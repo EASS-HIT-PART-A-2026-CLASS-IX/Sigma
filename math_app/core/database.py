@@ -8,7 +8,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Load database URL from environment
 DATABASE_URL = getenv(
-    "DATABASE_URL", "mysql+pymysql://root:rootpassword@localhost:3306/math_app"
+    "DATABASE_URL", "mysql+pymysql://root:fallback_password@localhost:3306/math_app"
 )
 DATABASE_ECHO = getenv("DATABASE_ECHO", "false").lower() == "true"
 
