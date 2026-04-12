@@ -126,8 +126,11 @@ async def create_lesson(
     if not lesson_create.title or not lesson_create.title.strip():
         raise HTTPException(status_code=422, detail="Title cannot be empty")
 
-    # Convert problems to JSON
-    problems_list = [p.model_dump() for p in lesson_create.problems] if lesson_create.problems else []
+    # Convert problems to JSON with generated IDs
+    problems_list = [
+        {**p.model_dump(), "id": str(uuid4())} 
+        for p in lesson_create.problems
+    ] if lesson_create.problems else []
     
     lesson_orm = LessonORM(
         id=str(uuid4()),
@@ -222,7 +225,10 @@ async def update_lesson(
     if lesson_update.level is not None:
         lesson_orm.level = lesson_update.level
     if lesson_update.problems is not None:
-        problems_list = [p.model_dump() for p in lesson_update.problems]
+        problems_list = [
+            {**p.model_dump(), "id": str(uuid4())} 
+            for p in lesson_update.problems
+        ]
         lesson_orm.problems_json = json.dumps(problems_list)
 
     session.commit()
