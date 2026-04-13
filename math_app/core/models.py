@@ -26,6 +26,7 @@ class Problem(BaseModel):
     answer: str = Field(..., description="The correct answer")
     difficulty: LevelEnum = Field(..., description="Problem difficulty")
     hint: Optional[str] = Field(None, description="Optional hint for solving")
+    explanation: Optional[str] = Field(None, description="Detailed explanation of solution")
 
 
 class ProblemCreate(BaseModel):
@@ -34,6 +35,7 @@ class ProblemCreate(BaseModel):
     answer: str = Field(..., min_length=1, description="The correct answer")
     difficulty: LevelEnum = Field(..., description="Problem difficulty")
     hint: Optional[str] = Field(None, description="Optional hint")
+    explanation: Optional[str] = Field(None, description="Detailed explanation of solution")
 
 
 class Lesson(BaseModel):
@@ -105,6 +107,27 @@ class UserProgressResponse(BaseModel):
     status: ProgressStatusEnum
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AttemptCreate(BaseModel):
+    """Input schema for submitting a problem answer."""
+    problem_id: str = Field(..., description="ID of the problem being attempted")
+    submitted_answer: str = Field(..., min_length=1, description="User's submitted answer")
+
+
+class AttemptResponse(BaseModel):
+    """Response schema for problem attempt endpoints."""
+    id: str
+    user_id: str
+    problem_id: str
+    submitted_answer: str
+    is_correct: bool
+    attempt_number: int
+    time_spent_seconds: Optional[int] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True

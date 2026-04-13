@@ -60,6 +60,7 @@ class UserORM(Base):
 
     # Relationships
     progress = relationship("UserProgressORM", back_populates="user", cascade="all, delete-orphan")
+    attempts = relationship("UserAttemptORM", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<UserORM(id={self.id}, username={self.username})>"
@@ -87,3 +88,28 @@ class UserProgressORM(Base):
 
     def __repr__(self):
         return f"<UserProgressORM(user_id={self.user_id}, lesson_id={self.lesson_id}, status={self.status})>"
+
+
+class UserAttemptORM(Base):
+    """ORM model for tracking user problem submission attempts."""
+    __tablename__ = "user_attempts"
+
+    id = Column(String(36), primary_key=True, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    problem_id = Column(String(36), nullable=False, index=True)
+    submitted_answer = Column(Text, nullable=False)
+    is_correct = Column(Integer, nullable=False, default=0)  # 0=False, 1=True
+    attempt_number = Column(Integer, nullable=False, default=1)
+    time_spent_seconds = Column(Integer, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        index=True
+    )
+
+    # Relationships
+    user = relationship("UserORM", back_populates="attempts")
+
+    def __repr__(self):
+        return f"<UserAttemptORM(user_id={self.user_id}, problem_id={self.problem_id}, is_correct={self.is_correct})>"
