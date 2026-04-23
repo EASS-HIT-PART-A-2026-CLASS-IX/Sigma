@@ -604,13 +604,63 @@
         const API_BASE_URL = 'http://localhost:8000';
         let token = localStorage.getItem('token');
         let currentUser = localStorage.getItem('currentUser');
+        let loginTime = localStorage.getItem('loginTime');
+        
+        let isExpired = false;
+        
+        // 1. Check local loginTime tracker (20 hours = 20 * 60 * 60 * 1000 ms)
+        if (loginTime && (Date.now() - parseInt(loginTime) > 20 * 60 * 60 * 1000)) {
+            isExpired = true;
+        } 
+        // 2. Check JWT expiration directly (covers users logged in before tracking was added)
+        else if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.exp && (payload.exp * 1000 < Date.now())) {
+                    isExpired = true;
+                }
+            } catch (e) {
+                isExpired = true; // invalid token
+            }
+        }
+
+        if (isExpired) {
+            token = null;
+            currentUser = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('loginTime');
+        }
+        
         let allLessons = [];
+
+        // Try to optionally refresh the token on app load if valid
+        async function potentiallyRefreshToken() {
+            if (!token) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.access_token;
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('loginTime', Date.now().toString());
+                    console.log('✓ Token successfully automatically refreshed.');
+                }
+            } catch (err) {
+                console.log('Failed backing token refresh', err);
+            }
+        }
 
         // Initialize
         function init() {
             updateAuthUI();
             loadLessons();
             checkHealth();
+            potentiallyRefreshToken();
         }
 
         // Check API health
@@ -703,6 +753,8 @@
                     currentUser = email.split('@')[0];
                     localStorage.setItem('token', token);
                     localStorage.setItem('currentUser', currentUser);
+                    localStorage.setItem('loginTime', Date.now().toString());
+                    console.log('✓ Login successful. Token:', token ? 'present' : 'missing');
                     
                     // Fetch and store current user ID
                     const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -711,6 +763,7 @@
                     if (userResponse.ok) {
                         const userData = await userResponse.json();
                         localStorage.setItem('userId', userData.id);
+                        console.log('✓ User ID stored:', userData.id);
                     }
                     
                     showMessage(messageDiv, 'success', 'Logged in successfully!');
@@ -719,9 +772,11 @@
                     setTimeout(() => switchTab('login'), 1500);
                 } else {
                     showMessage(messageDiv, 'error', data.detail || 'Login failed');
+                    console.error('✗ Login failed:', data);
                 }
             } catch (error) {
                 showMessage(messageDiv, 'error', 'Connection error: ' + error.message);
+                console.error('✗ Login error:', error);
             }
         }
 
@@ -732,6 +787,7 @@
             localStorage.removeItem('token');
             localStorage.removeItem('currentUser');
             localStorage.removeItem('userId');
+            localStorage.removeItem('loginTime');
             updateAuthUI();
             closeLessonDetail();
             loadLessons();
@@ -900,7 +956,8 @@
 
         // Submit problem answer
         async function submitAnswer(problemId, lessonId, buttonElement) {
-            if (!token) {
+            // Ensure we have valid token
+            if (!token || token === 'null' || token === '') {
                 alert('Please login to submit answers');
                 return;
             }

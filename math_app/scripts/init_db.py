@@ -39,7 +39,7 @@ def init_database():
             print(f"⚠️  Sample database not found at {sample_db_path}")
             return
 
-        with open(sample_db_path, "r") as f:
+        with open(sample_db_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         lessons_data = data.get("lessons", [])

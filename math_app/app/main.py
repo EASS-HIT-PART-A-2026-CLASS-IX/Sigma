@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query, Depends, Header
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -29,6 +29,7 @@ from math_app.core.learning_algorithms import (
     recommend_difficulty_level,
     get_user_attempt_stats,
 )
+from math_app.core.security import get_current_user_from_token
 from math_app.app import auth
 
 app = FastAPI(
@@ -48,6 +49,27 @@ app.add_middleware(
 
 # Include auth router
 app.include_router(auth.router)
+
+
+# Dependency: Extract current user from Authorization header
+async def get_current_user(
+    authorization: str | None = Header(None),
+    session: Session = Depends(get_session),
+):
+    """Extract and validate user from Authorization header with Bearer token."""
+    # Validate token
+    await get_current_user_from_token(authorization)
+    
+    # Get payload from token
+    payload = await get_current_user_from_token(authorization)
+    user_id = payload.get("sub")
+    
+    # Get user object from database
+    user = session.query(UserORM).filter(UserORM.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user
 
 
 @app.exception_handler(MathAPIException)

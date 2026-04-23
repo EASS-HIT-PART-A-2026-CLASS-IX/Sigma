@@ -3,7 +3,7 @@ Authentication endpoints: signup, signin, get current user.
 """
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
 from sqlalchemy.orm import Session
 
 from math_app.core.database import get_session
@@ -101,9 +101,47 @@ async def signin(request: UserLoginRequest, session: Session = Depends(get_sessi
     )
 
 
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(
+    authorization: str | None = Header(None),
+    session: Session = Depends(get_session),
+):
+    """
+    Issue a new JWT token using an existing valid token.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    
+    try:
+        scheme, token = authorization.split() if " " in authorization else ("", authorization)
+        if scheme.lower() != "bearer":
+            raise ValueError("Invalid scheme")
+    except (ValueError, IndexError):
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+    
+    try:
+        payload = decode_access_token(token)
+        user_id = payload.get("sub")
+        username = payload.get("username")
+        if not user_id or not username:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    
+    # Generate new token
+    new_access_token = create_access_token(data={"sub": user_id, "username": username})
+    
+    return TokenResponse(
+        access_token=new_access_token,
+        token_type="bearer",
+        user_id=user_id,
+        username=username,
+    )
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_current_user(
-    authorization: str | None = None,
+    authorization: str | None = Header(None),
     session: Session = Depends(get_session),
 ):
     """

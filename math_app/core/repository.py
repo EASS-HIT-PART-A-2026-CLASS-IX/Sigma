@@ -29,7 +29,7 @@ class LessonRepository:
         db_path = Path(__file__).parent.parent.parent / "sample_db.json"
         if db_path.exists():
             try:
-                with open(db_path, "r") as f:
+                with open(db_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     for lesson_data in data.get("lessons", []):
                         problems = [

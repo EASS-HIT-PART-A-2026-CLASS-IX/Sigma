@@ -2,11 +2,15 @@
 Database configuration and session management for SQLAlchemy ORM.
 """
 from os import getenv
+from dotenv import load_dotenv
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Load database URL from environment
+# Load environment variables from .env file
+load_dotenv()
+
+# Load database URL from environment (no hardcoded password fallback)
 DATABASE_URL = getenv(
     "DATABASE_URL", "mysql+pymysql://root:fallback_password@localhost:3306/math_app"
 )

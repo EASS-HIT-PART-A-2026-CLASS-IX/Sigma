@@ -10,7 +10,7 @@ from bcrypt import checkpw, hashpw, gensalt
 # JWT Configuration
 SECRET_KEY = getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production-min-32-chars-long")
 ALGORITHM = getenv("JWT_ALGORITHM", "HS256")
-EXPIRATION_HOURS = int(getenv("JWT_EXPIRATION_HOURS", "24"))
+EXPIRATION_HOURS = int(getenv("JWT_EXPIRATION_HOURS", "20"))
 
 
 def hash_password(password: str) -> str:
@@ -66,3 +66,40 @@ def decode_access_token(token: str) -> dict:
         return payload
     except jwt.InvalidTokenError as e:
         raise ValueError(f"Invalid token: {str(e)}") from e
+
+
+async def get_current_user_from_token(authorization: str | None = None) -> dict:
+    """
+    Extract and validate user from Authorization header.
+    
+    Args:
+        authorization: Authorization header value (e.g., "Bearer <token>")
+    
+    Returns:
+        Decoded token payload with user info
+    
+    Raises:
+        HTTPException: If token is missing or invalid
+    """
+    from fastapi import HTTPException
+    
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    
+    # Extract token
+    try:
+        scheme, token = authorization.split() if " " in authorization else ("", authorization)
+        if scheme.lower() != "bearer":
+            raise ValueError("Invalid scheme")
+    except (ValueError, IndexError):
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+    
+    # Decode token
+    try:
+        payload = decode_access_token(token)
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return payload
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))

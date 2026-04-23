@@ -25,3 +25,5 @@ sample_db.json
 
 # Local gitignore overrides
 .gitignore.local
+
+.txt

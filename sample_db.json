@@ -14,24 +14,21 @@
           "difficulty": "beginner",
           "hint": "Count on your fingers",
           "explanation": "When we add 2 and 3, we start with 2 and count 3 more: 2, 3, 4, 5. The answer is 5."
-        }
-        {
+        }, {
           "id": "problem-002",
           "question": "What is 5 + 4?",
           "answer": "9",
           "difficulty": "beginner",
           "hint": "Start with 5 and count 4 more",
           "explanation": "Starting at 5, count 4 more: 5, 6, 7, 8, 9. So 5 + 4 = 9."
-        }
-        {
+        }, {
           "id": "problem-003",
           "question": "What is 6 + 3?",
           "answer": "9",
           "difficulty": "beginner",
           "hint": "Count 3 more after 6",
           "explanation": "6 + 3 means starting at 6 and adding 3 more: 6, 7, 8, 9. The sum is 9."
-        }
-        {
+        }, {
           "id": "problem-004",
           "question": "What is 1 + 8?",
           "answer": "9",
@@ -382,3 +379,4 @@
     }
   ]
 }
+
